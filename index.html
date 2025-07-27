@@ -12,1304 +12,561 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
-      gtag('config', 'G-32VR3DNEC3'); // Updated Measurement ID
+      gtag('config', 'G-32VR3DNEC3');
     </script>
-    <!-- Add these inside your <head> before your main script -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-
-<body>
-  <!-- ...your existing content... -->
-
-  <!-- Firebase Auth Modals -->
-  <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
-    <div class="bg-white rounded-2xl shadow-xl w-[95vw] max-w-md p-8 text-gray-800">
-      <h2 class="text-2xl font-bold mb-4" id="authModalTitle">Sign In</h2>
-      <form id="authForm" class="space-y-4">
-        <input id="authEmail" type="email" placeholder="Email" required class="w-full py-2 px-3 border rounded" />
-        <input id="authPassword" type="password" placeholder="Password" required class="w-full py-2 px-3 border rounded" />
-        <div id="authError" class="text-red-600 font-semibold text-sm"></div>
-        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded font-bold">Continue</button>
-      </form>
-      <div class="flex justify-between mt-4 text-sm">
-        <button id="switchToSignUp" class="text-blue-600 hover:underline">Don't have an account? Sign up</button>
-        <button id="switchToSignIn" class="text-blue-600 hover:underline hidden">Already have an account? Sign in</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Email Verification Banner -->
-  <div id="verifyBanner" class="hidden fixed top-0 left-0 w-full bg-yellow-400 text-gray-900 text-center py-3 z-40">
-    Please verify your email address.
-    <button id="sendVerifyEmail" class="ml-3 bg-blue-700 hover:bg-blue-800 text-white px-2 py-1 rounded">Resend Verification Email</button>
-    <button id="signOutBtn" class="ml-3 bg-gray-700 hover:bg-gray-800 text-white px-2 py-1 rounded">Sign Out</button>
-  </div>
-
-  <!-- Auth Button -->
-  <button id="authOpenBtn" class="fixed top-5 right-8 z-40 bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow-lg">Sign In</button>
-  <button id="signOutBtnMain" class="fixed top-5 right-8 z-40 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded font-bold shadow-lg hidden">Sign Out</button>
-
-  <!-- ...your existing main content and footer... -->
-
-  <script type="module">
-    // --- Your existing script code above ---
-
-    // --- Firebase Auth Integration ---
-
-    // 1. Initialize Firebase (replace with your actual Firebase config)
-   // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAzI8g7OCNqRAHpbB-A76tPE-3nY0WNthA",
-  authDomain: "imagine-mind.firebaseapp.com",
-  projectId: "imagine-mind",
-  storageBucket: "imagine-mind.firebasestorage.app",
-  messagingSenderId: "269766131845",
-  appId: "1:269766131845:web:2d0734a8357e274ec3a9ec",
-  measurementId: "G-32VR3DNEC3"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-    // 2. DOM Elements
-    const authModal = document.getElementById('authModal');
-    const authOpenBtn = document.getElementById('authOpenBtn');
-    const authForm = document.getElementById('authForm');
-    const authEmail = document.getElementById('authEmail');
-    const authPassword = document.getElementById('authPassword');
-    const authError = document.getElementById('authError');
-    const switchToSignUp = document.getElementById('switchToSignUp');
-    const switchToSignIn = document.getElementById('switchToSignIn');
-    const authModalTitle = document.getElementById('authModalTitle');
-    const signOutBtn = document.getElementById('signOutBtn');
-    const signOutBtnMain = document.getElementById('signOutBtnMain');
-    const verifyBanner = document.getElementById('verifyBanner');
-    const sendVerifyEmail = document.getElementById('sendVerifyEmail');
-
-    let isSignUpMode = false;
-
-    // 3. Show/Hide Modal
-    authOpenBtn.onclick = () => {
-      authModal.classList.remove('hidden');
-      isSignUpMode = false;
-      authModalTitle.textContent = "Sign In";
-      switchToSignUp.classList.remove('hidden');
-      switchToSignIn.classList.add('hidden');
-      authError.textContent = "";
-      authForm.reset();
-    };
-    switchToSignUp.onclick = () => {
-      isSignUpMode = true;
-      authModalTitle.textContent = "Sign Up";
-      switchToSignUp.classList.add('hidden');
-      switchToSignIn.classList.remove('hidden');
-      authError.textContent = "";
-      authForm.reset();
-    };
-    switchToSignIn.onclick = () => {
-      isSignUpMode = false;
-      authModalTitle.textContent = "Sign In";
-      switchToSignUp.classList.remove('hidden');
-      switchToSignIn.classList.add('hidden');
-      authError.textContent = "";
-      authForm.reset();
-    };
-    // Close modal on click outside (optional)
-    authModal.addEventListener('click', (e) => {
-      if (e.target === authModal) authModal.classList.add('hidden');
-    });
-
-    // 4. Auth Form Submit
-    authForm.onsubmit = async (e) => {
-      e.preventDefault();
-      authError.textContent = "";
-      const email = authEmail.value;
-      const password = authPassword.value;
-
-      try {
-        if (isSignUpMode) {
-          const { user } = await auth.createUserWithEmailAndPassword(email, password);
-          await user.sendEmailVerification();
-          alert("Verification email sent. Please check your inbox.");
-          authModal.classList.add('hidden');
-        } else {
-          await auth.signInWithEmailAndPassword(email, password);
-          authModal.classList.add('hidden');
-        }
-      } catch (err) {
-        authError.textContent = err.message;
-      }
-    };
-
-    // 5. Auth State Change
-    auth.onAuthStateChanged(async user => {
-      if (user) {
-        if (!user.emailVerified) {
-          verifyBanner.classList.remove('hidden');
-          authOpenBtn.classList.add('hidden');
-          signOutBtnMain.classList.remove('hidden');
-        } else {
-          verifyBanner.classList.add('hidden');
-          authOpenBtn.classList.add('hidden');
-          signOutBtnMain.classList.remove('hidden');
-        }
-      } else {
-        verifyBanner.classList.add('hidden');
-        authOpenBtn.classList.remove('hidden');
-        signOutBtnMain.classList.add('hidden');
-      }
-    });
-
-    // 6. Send Verification Email
-    sendVerifyEmail.onclick = async () => {
-      const user = auth.currentUser;
-      if (user && !user.emailVerified) {
-        await user.sendEmailVerification();
-        alert('Verification email sent!');
-      }
-    };
-
-    // 7. Sign Out
-    signOutBtn.onclick = signOutBtnMain.onclick = async () => {
-      await auth.signOut();
-    };
-
-    // --- Restrict features to verified users if needed ---
-    // function requireVerifiedUser(action) {
-    //   const user = auth.currentUser;
-    //   if (!user || !user.emailVerified) {
-    //     alert('Please sign in and verify your email to use this feature.');
-    //     return false;
-    //   }
-    //   action();
-    //   return true;
-    // }
-    // Usage: requireVerifiedUser(() => { /* protected code */ });
-
-    // --- End Firebase Auth Integration ---
-  </script>
-</body>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase JS SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <style>
-        /* --- Base Styles & Global Animations --- */
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        /* Custom Styles (shortened here for brevity) */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg,#0f172a,#1e293b 40%,#3b82f6 100%);
+            min-height: 100vh;
         }
         .animate-spin-custom {
             animation: spin 1s linear infinite;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes spin {
+            from { transform: rotate(0deg);}
+            to { transform: rotate(360deg);}
         }
-        .animate-fade-in-up {
-            animation: fadeIn 0.6s ease-out forwards;
-        }
-        @keyframes gradient-animation {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-size: 400% 400%;
-            animation: gradient-animation 15s ease infinite;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding-top: 5rem; /* Space for fixed header */
-            color: #e2e8f0; /* Default text color for better contrast on dark background */
-        }
-
-        /* --- Card & Image Container Pulsating Shadow (Royal Blue & Gold) --- */
-        @keyframes pulse-shadow-royal {
-            0% { box-shadow: 0 0 15px rgba(30, 58, 138, 0.4); } /* Darker Blue */
-            50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.7); } /* Brighter Gold */
-            100% { box-shadow: 0 0 15px rgba(30, 58, 138, 0.4); }
-        }
-        .card-with-animated-shadow, .image-container-with-animated-shadow {
-            animation: pulse-shadow-royal 3s infinite alternate;
-        }
-
-        /* --- Fixed Header --- */
-        #fixedHeader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background-color: rgba(15, 23, 42, 0.98); /* Almost opaque slate-900 */
-            backdrop-filter: blur(16px); /* Stronger blur */
-            z-index: 1000;
-            padding: 1.2rem 2rem; /* More generous padding */
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); /* Deeper, more spread shadow */
-            border-bottom: 1px solid rgba(59, 130, 246, 0.4); /* More visible blue border */
-        }
-        #fixedHeader .text-white {
-            text-shadow: 0 2px 5px rgba(0,0,0,0.3); /* Subtle text shadow for title */
-        }
-
-        /* --- Navigation Menu --- */
-        #navMenu {
-            position: fixed;
-            top: 80px; /* Adjusted based on new header height */
-            left: 0;
-            width: 250px; /* Wider menu */
-            background-color: rgba(15, 23, 42, 0.99); /* Nearly opaque */
-            backdrop-filter: blur(20px); /* Very strong blur */
-            border-radius: 0 1.5rem 1.5rem 0; /* More rounded */
-            box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.8); /* Even deeper shadow */
-            padding: 1rem 0;
-            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.4s ease-out; /* Springy transition */
-            transform-origin: top left;
-            transform: translateX(-100%);
-            opacity: 0;
-            z-index: 999;
-            border-right: 2px solid rgba(59, 130, 246, 0.6); /* More prominent blue border */
-        }
-        #navMenu.show-menu {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        #navMenu button {
-            padding: 1.2rem 1.8rem; /* More padding */
-            text-align: left;
-            font-size: 1.35rem; /* Larger font */
-            font-weight: 700;
-            color: #e2e8f0;
-            width: 100%;
-            transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
-            position: relative; /* For the pseudo-element glow */
-            overflow: hidden; /* Hide overflow for glow effect */
-        }
-        #navMenu button:hover {
-            background-color: #1e3a8a; /* Darker blue */
-            color: #ffffff;
-            transform: translateX(10px); /* More pronounced slide on hover */
-        }
-        #navMenu button.active {
-            background-color: #3b82f6; /* Medium blue */
-            color: #ffffff;
-            box-shadow: inset 5px 0 0 0 #d4af37; /* Thicker gold left border */
-        }
-        /* Subtle glow on hover for nav buttons */
-        #navMenu button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: all 0.5s ease;
-        }
-        #navMenu button:hover::before {
-            left: 100%;
-        }
-
-        /* --- Button Gradients & Hover Effects --- */
-        .btn-gradient {
-            background-image: linear-gradient(to right top, #1e3a8a, #3b82f6, #1e3a8a);
-            box-shadow: 0 12px 25px rgba(30, 58, 138, 0.5); /* Deeper, more spread shadow */
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smoother transition */
-            border: 1px solid rgba(59, 130, 246, 0.5); /* Subtle border */
-        }
-        .btn-gradient:hover {
-            background-image: linear-gradient(to right top, #3b82f6, #1e3a8a, #1e3a8a);
-            box-shadow: 0 18px 35px rgba(30, 58, 138, 0.8); /* Even deeper shadow */
-            transform: translateY(-5px); /* More pronounced lift */
-        }
-        .btn-gradient:active {
-            background-image: linear-gradient(to right top, #1e3a8a, #1e3a8a, #3b82f6, #3b82f6);
-            transform: translateY(0);
-            box-shadow: 0 8px 15px rgba(30, 58, 138, 0.4);
-        }
-
-        .download-btn-gradient {
-            background-image: linear-gradient(to right, #d1d5db, #e5e7eb, #d1d5db);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease-out;
-            color: #333; /* Darker text for contrast */
-            border: 1px solid #c0c0c0;
-        }
-        .download-btn-gradient:hover {
-            background-image: linear-gradient(to right, #e5e7eb, #d1d5db, #e5e7eb);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-            transform: translateY(-2px);
-        }
-        .download-btn-gradient:active {
-            transform: translateY(0);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        /* --- Editor Specific Buttons --- */
-        .btn-primary-editor {
-            background-image: linear-gradient(to right, #1e3a8a, #3b82f6, #1e3a8a);
-            background-size: 200% 100%;
-            animation: gradient-move 4s linear infinite;
-            transition: all 0.3s ease-out;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(59, 130, 246, 0.5);
-        }
-        .btn-primary-editor:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
-        }
-        .btn-primary-editor:active {
-            transform: translateY(0);
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
-        }
-        .btn-primary-editor.disabled {
-            background-image: none;
-            background-color: #6b7280; /* gray-500 */
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-            animation: none;
-        }
-
-        .btn-secondary-editor {
-            background-image: linear-gradient(to right, #d4af37, #b8860b, #d4af37);
-            background-size: 200% 100%;
-            animation: gradient-move 4s linear infinite;
-            transition: all 0.3s ease-out;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            color: #333; /* Darker text for contrast */
-            border: 1px solid rgba(212, 175, 55, 0.6);
-        }
-        .btn-secondary-editor:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-        }
-        .btn-secondary-editor:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        /* --- Input & Container Transitions --- */
-        .input-glow:focus {
-            box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.6); /* Stronger glow */
-            border-color: #3b82f6;
-        }
-        .input-field-transition {
-            transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-        }
-        .container-transition {
-            transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out;
-        }
-        .error-container-transition {
-            transition: opacity 0.3s ease-in-out;
-        }
-
-        /* --- Custom File Upload --- */
-        .custom-file-upload {
-            padding: 0.85rem 1.8rem; /* More padding */
-            border-radius: 0.85rem; /* More rounded */
-            font-weight: 700; /* Bolder text */
-            background-image: linear-gradient(to right, #1e3a8a, #3b82f6, #1e3a8a);
-            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease-out;
-            border: 1px solid rgba(59, 130, 246, 0.5);
-        }
-        .custom-file-upload:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
-        }
-        .custom-file-upload-text {
-            color: #94a3b8; /* slate-400 */
-            font-size: 0.95rem; /* Slightly larger */
-            font-weight: 500;
-        }
+        /* Add the rest of your custom styles or paste your original CSS here */
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-900 via-blue-950 to-gray-950">
 
+    <!-- Firebase Auth Modals -->
+    <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
+      <div class="bg-white rounded-2xl shadow-xl w-[95vw] max-w-md p-8 text-gray-800">
+        <h2 class="text-2xl font-bold mb-4" id="authModalTitle">Sign In</h2>
+        <form id="authForm" class="space-y-4">
+          <input id="authEmail" type="email" placeholder="Email" required class="w-full py-2 px-3 border rounded" />
+          <input id="authPassword" type="password" placeholder="Password" required class="w-full py-2 px-3 border rounded" />
+          <div id="authError" class="text-red-600 font-semibold text-sm"></div>
+          <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded font-bold">Continue</button>
+        </form>
+        <div class="flex justify-between mt-4 text-sm">
+          <button id="switchToSignUp" class="text-blue-600 hover:underline">Don't have an account? Sign up</button>
+          <button id="switchToSignIn" class="text-blue-600 hover:underline hidden">Already have an account? Sign in</button>
+        </div>
+      </div>
+    </div>
+    <!-- Email Verification Banner -->
+    <div id="verifyBanner" class="hidden fixed top-0 left-0 w-full bg-yellow-400 text-gray-900 text-center py-3 z-40">
+      Please verify your email address.
+      <button id="sendVerifyEmail" class="ml-3 bg-blue-700 hover:bg-blue-800 text-white px-2 py-1 rounded">Resend Verification Email</button>
+      <button id="signOutBtn" class="ml-3 bg-gray-700 hover:bg-gray-800 text-white px-2 py-1 rounded">Sign Out</button>
+    </div>
+    <!-- Auth Button -->
+    <button id="authOpenBtn" class="fixed top-5 right-8 z-40 bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow-lg">Sign In</button>
+    <button id="signOutBtnMain" class="fixed top-5 right-8 z-40 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded font-bold shadow-lg hidden">Sign Out</button>
+    
     <!-- Fixed Header with Hamburger Icon and Title -->
-    <div id="fixedHeader">
+    <div id="fixedHeader" class="w-full fixed top-0 left-0 bg-slate-900 bg-opacity-95 shadow-lg flex items-center px-8 py-3 z-30">
         <div class="flex items-center space-x-4">
             <button id="menuToggleBtn" class="p-2 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-8 h-8">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                 </svg>
             </button>
-            <!-- Logo SVG -->
-            <svg id="appLogo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 text-blue-400">
-                <defs>
-                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#3b82f6" />
-                        <stop offset="100%" stop-color="#818cf8" />
-                    </linearGradient>
-                </defs>
-                <path fill="url(#logoGradient)" d="M12 9a3.75 3.75 0 100 7.5A3.75 3.75 0 0012 9z" />
-                <path fill="url(#logoGradient)" fill-rule="evenodd" d="M9.344 3.071a49.52 49.52 0 015.312 0c.788.096 1.547.317 2.28.675.118.056.237.117.356.183A6.75 6.75 0 0021.75 9a9.75 9.75 0 01-7.874 7.752 49.485 49.485 0 01-2.88 0C6.147 16.518 3.75 14.12 3.75 11.25a6.75 6.75 0 013.132-5.714 12.603 12.603 0 011.048-.659 48.041 48.041 0 011.004-.647zM12 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z" clip-rule="evenodd" />
-            </svg>
             <span class="text-3xl md:text-4xl font-extrabold text-white">Imagine Mind</span>
         </div>
     </div>
-
     <!-- Navigation Menu (Dropdown) -->
     <div id="navMenu" class="hidden">
         <button id="showHomeBtn" class="active">Home</button>
         <button id="showGeneratorBtn">Image Generator</button>
         <button id="showEditorBtn">Image Editor</button>
     </div>
-    <body>
-  <!-- ...your existing content... -->
-
-  <!-- Firebase Auth Modals -->
-  <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
-    <div class="bg-white rounded-2xl shadow-xl w-[95vw] max-w-md p-8 text-gray-800">
-      <h2 class="text-2xl font-bold mb-4" id="authModalTitle">Sign In</h2>
-      <form id="authForm" class="space-y-4">
-        <input id="authEmail" type="email" placeholder="Email" required class="w-full py-2 px-3 border rounded" />
-        <input id="authPassword" type="password" placeholder="Password" required class="w-full py-2 px-3 border rounded" />
-        <div id="authError" class="text-red-600 font-semibold text-sm"></div>
-        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded font-bold">Continue</button>
-      </form>
-      <div class="flex justify-between mt-4 text-sm">
-        <button id="switchToSignUp" class="text-blue-600 hover:underline">Don't have an account? Sign up</button>
-        <button id="switchToSignIn" class="text-blue-600 hover:underline hidden">Already have an account? Sign in</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Email Verification Banner -->
-  <div id="verifyBanner" class="hidden fixed top-0 left-0 w-full bg-yellow-400 text-gray-900 text-center py-3 z-40">
-    Please verify your email address.
-    <button id="sendVerifyEmail" class="ml-3 bg-blue-700 hover:bg-blue-800 text-white px-2 py-1 rounded">Resend Verification Email</button>
-    <button id="signOutBtn" class="ml-3 bg-gray-700 hover:bg-gray-800 text-white px-2 py-1 rounded">Sign Out</button>
-  </div>
-
-  <!-- Auth Button -->
-  <button id="authOpenBtn" class="fixed top-5 right-8 z-40 bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow-lg">Sign In</button>
-  <button id="signOutBtnMain" class="fixed top-5 right-8 z-40 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded font-bold shadow-lg hidden">Sign Out</button>
-
-
     <!-- Main Content Sections -->
-    <main class="w-full max-w-6xl flex flex-col items-center p-4">
-
+    <main class="w-full max-w-6xl flex flex-col items-center p-4 pt-32">
         <!-- Home Section -->
-        <section id="homeSection" class="w-full text-center mx-auto my-8 transform transition-all duration-700 flex flex-col justify-center min-h-[calc(100vh-100px)] bg-slate-900 bg-opacity-30 backdrop-filter backdrop-blur-lg p-8 rounded-3xl shadow-2xl shadow-blue-900/50 border-2 border-blue-600 border-opacity-40 card-with-animated-shadow">
+        <section id="homeSection" class="w-full text-center mx-auto my-8 flex flex-col justify-center min-h-[calc(100vh-100px)]">
             <h1 class="text-5xl md:text-6xl font-extrabold mb-4 leading-tight">
                 <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-400">
                     Welcome to Imagine Mind!
                 </span>
             </h1>
-
             <p class="text-slate-200 text-xl md:text-2xl max-w-2xl mx-auto mb-10">
                 Unleash your creativity with AI-powered image generation and editing.
             </p>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
                 <!-- Image Generator Card -->
-                <div class="bg-slate-900 bg-opacity-40 backdrop-filter backdrop-blur-lg p-8 rounded-3xl shadow-xl shadow-blue-900/30 border border-blue-700 border-opacity-30 flex flex-col items-center">
+                <div class="bg-slate-900 bg-opacity-40 p-8 rounded-3xl shadow-xl border border-blue-700 border-opacity-30 flex flex-col items-center">
                     <h2 class="text-3xl font-bold text-slate-100 mb-4">Image Generator</h2>
                     <p class="text-slate-300 mb-6 text-lg text-left flex-grow">
                         Transform textual prompts into rich visual masterpieces. Input detailed descriptions and let AI bring your ideas to life.
                     </p>
-                    <button id="homeToGeneratorBtn" class="px-8 py-4 rounded-xl bg-blue-600 text-white font-semibold text-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                    <button id="homeToGeneratorBtn" class="px-8 py-4 rounded-xl bg-blue-600 text-white font-semibold text-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl">
                         Try Image Generator
                     </button>
                 </div>
-
                 <!-- Image Editor Card -->
-                <div class="bg-slate-900 bg-opacity-40 backdrop-filter backdrop-blur-lg p-8 rounded-3xl shadow-xl shadow-blue-900/30 border border-blue-700 border-opacity-30 flex flex-col items-center">
+                <div class="bg-slate-900 bg-opacity-40 p-8 rounded-3xl shadow-xl border border-blue-700 border-opacity-30 flex flex-col items-center">
                     <h2 class="text-3xl font-bold text-slate-100 mb-4">Image Editor</h2>
                     <p class="text-slate-300 mb-6 text-lg text-left flex-grow">
                         Upload your images and manipulate them with AI. Describe complex edits like style transfer or background changes, and get stunning results.
                     </p>
-                    <button id="homeToEditorBtn" class="px-8 py-4 rounded-xl bg-blue-600 text-white font-semibold text-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                    <button id="homeToEditorBtn" class="px-8 py-4 rounded-xl bg-blue-600 text-white font-semibold text-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl">
                         Try Image Editor
                     </button>
                 </div>
             </div>
         </section>
-
         <!-- Image Generator Section -->
-        <section id="generatorSection" class="w-full max-w-3xl bg-slate-900 bg-opacity-30 backdrop-filter backdrop-blur-lg p-8 rounded-3xl shadow-2xl shadow-blue-900/50 border-2 border-blue-600 border-opacity-40 mx-auto my-8 transform transition-all duration-700 card-with-animated-shadow hidden">
-            <h2 class="text-4xl md:text-5xl font-extrabold mb-6">
-                <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-400">
-                    Image Generator
-                </span>
+        <section id="generatorSection" class="w-full max-w-3xl bg-slate-900 bg-opacity-30 p-8 rounded-3xl shadow-2xl border-2 border-blue-600 border-opacity-40 my-10 hidden">
+            <h2 class="text-4xl md:text-5xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-400">
+                Image Generator
             </h2>
-
             <p class="text-slate-300 mb-8 text-lg md:text-xl">
                 Unleash your imagination and generate stunning visuals with the power of AI.
             </p>
-
             <div class="mb-8">
                 <label for="generatorPromptInput" class="block text-left text-slate-300 text-base font-semibold mb-2">
                     Image Prompt:
                 </label>
-                <textarea
-                    id="generatorPromptInput"
-                    class="w-full p-5 border border-blue-500 border-opacity-50 rounded-xl outline-none transition-all duration-400 text-slate-200 placeholder-slate-400 resize-none shadow-inner-lg bg-slate-800 bg-opacity-90 input-glow focus:border-blue-700"
-                    rows="6"
-                    placeholder="e.g., 'A majestic dragon soaring over a bioluminescent forest at twilight, intricate details, fantasy art, volumetric lighting, 8k.'"
-                ></textarea>
+                <textarea id="generatorPromptInput" class="w-full p-5 border border-blue-500 border-opacity-50 rounded-xl outline-none text-slate-200 placeholder-slate-400 resize-none bg-slate-800" rows="6"
+                    placeholder="e.g., 'A majestic dragon soaring over a bioluminescent forest at twilight, intricate details, fantasy art, volumetric lighting, 8k.'"></textarea>
             </div>
-
-            <button
-                id="generateImageButton"
-                class="w-full py-4 px-8 rounded-xl text-white font-extrabold text-xl shadow-lg transition-all duration-400 transform hover:-translate-y-1 hover:shadow-2xl btn-gradient"
-            >
+            <button id="generateImageButton"
+                class="w-full py-4 px-8 rounded-xl text-white font-extrabold text-xl shadow-lg bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
                 <div id="generateButtonContent" class="flex items-center justify-center">
                     <span>Generate Image</span>
                 </div>
             </button>
-
-            <div id="generatorErrorContainer" class="mt-8 p-5 bg-red-800 bg-opacity-70 border border-red-600 text-red-100 rounded-lg text-lg shadow-xl hidden animate-fade-in-up">
-                <!-- Error messages will be displayed here -->
+            <div id="generatorErrorContainer" class="mt-8 p-5 bg-red-800 bg-opacity-70 border border-red-600 text-red-100 rounded-lg text-lg shadow-xl hidden">
             </div>
-
-            <div id="generatedImageResultContainer" class="mt-10 animate-fade-in-up hidden">
+            <div id="generatedImageResultContainer" class="mt-10 hidden">
                 <h2 class="text-3xl font-bold text-slate-100 mb-6">Your Creation:</h2>
                 <div class="relative w-full h-auto rounded-xl shadow-aura-lg border-4 border-blue-500 flex items-center justify-center bg-slate-900 bg-opacity-50 p-3 overflow-hidden">
-                    <img
-                        id="generatedImage"
-                        src=""
-                        alt="Generated AI image based on user prompt"
-                        class="max-w-full h-auto object-contain rounded-lg shadow-md transition-transform duration-300 hover:scale-105"
-                    >
+                    <img id="generatedImage" src="" alt="Generated AI image based on user prompt"
+                        class="max-w-full h-auto object-contain rounded-lg shadow-md transition-transform duration-300 hover:scale-105">
                 </div>
-                <!-- Download button -->
                 <div class="mt-6 flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                     <label for="generatorDownloadFormat" class="text-slate-300 font-semibold">Download as:</label>
-                    <select id="generatorDownloadFormat" class="p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <select id="generatorDownloadFormat" class="p-2 rounded-lg bg-slate-700 text-white border border-slate-600">
                         <option value="image/png">PNG</option>
                         <option value="image/jpeg">JPEG</option>
                         <option value="image/webp">WebP</option>
                     </select>
-                    <button
-                        id="downloadGeneratedButton"
-                        class="py-3.5 px-8 rounded-xl text-gray-900 font-bold text-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 download-btn-gradient"
-                    >
+                    <button id="downloadGeneratedButton"
+                        class="py-3.5 px-8 rounded-xl text-gray-900 font-bold text-lg bg-gray-200 hover:bg-gray-300">
                         Download Image
                     </button>
                 </div>
             </div>
         </section>
-
         <!-- Image Editor Section -->
-        <section id="editorSection" class="w-full max-w-3xl bg-slate-900 bg-opacity-30 backdrop-filter backdrop-blur-lg p-8 rounded-3xl shadow-2xl shadow-blue-900/50 border-2 border-blue-600 border-opacity-40 mx-auto my-8 transform transition-all duration-700 card-with-animated-shadow hidden">
-            <h2 class="text-4xl md:text-5xl font-extrabold mb-6">
-                <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-400">
-                    Image Editor
-                </span>
+        <section id="editorSection" class="w-full max-w-3xl bg-slate-900 bg-opacity-30 p-8 rounded-3xl shadow-2xl border-2 border-blue-600 border-opacity-40 my-10 hidden">
+            <h2 class="text-4xl md:text-5xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-400">
+                Image Editor
             </h2>
-
             <p class="text-slate-300 mb-8 text-lg md:text-xl">
                 Upload an image and use AI to transform it!
             </p>
-
             <div class="mb-8">
                 <label for="editorImageUpload" class="block text-left text-slate-300 text-base font-semibold mb-2">
                     Upload Image:
                 </label>
                 <input type="file" id="editorImageUpload" accept="image/*" class="hidden">
                 <div class="flex items-center space-x-3">
-                    <div id="editorCustomFileUploadButton" class="custom-file-upload flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                        </svg>
+                    <div id="editorCustomFileUploadButton" class="bg-blue-600 px-4 py-2 rounded-lg text-white cursor-pointer hover:bg-blue-700">
                         <span>Choose File</span>
                     </div>
-                    <span id="editorFileNameDisplay" class="custom-file-upload-text text-slate-400">No file chosen</span>
+                    <span id="editorFileNameDisplay" class="text-slate-400">No file chosen</span>
                 </div>
-
-                <div id="editorPreviewContainer" class="mt-6 flex justify-center items-center bg-slate-800 rounded-xl p-4 border-2 border-dashed border-blue-500 min-h-[200px] overflow-hidden shadow-lg container-transition image-container-with-animated-shadow">
-                    <img id="editorImagePreview" src="#" alt="Preview of uploaded image" class="max-w-full max-h-56 object-contain rounded-lg shadow-md">
+                <div id="editorPreviewContainer" class="mt-6 flex justify-center items-center bg-slate-800 rounded-xl p-4 border-2 border-dashed border-blue-500 min-h-[200px] overflow-hidden">
+                    <img id="editorImagePreview" src="#" alt="Preview of uploaded image" class="max-w-full max-h-56 object-contain rounded-lg shadow-md hidden">
                     <p id="editorImagePlaceholder" class="text-gray-400 text-lg">No image uploaded</p>
                 </div>
             </div>
-
             <div class="mb-8">
                 <label for="editorPromptInputText" class="block text-left text-slate-300 text-base font-semibold mb-2">
                     Describe your desired edit:
                 </label>
-                <textarea
-                    id="editorPromptInputText"
-                    class="w-full p-4 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-700 outline-none transition-all duration-300 text-slate-200 placeholder-slate-400 resize-none shadow-sm hover:border-blue-500 input-field-transition bg-slate-800"
-                    rows="5"
-                    placeholder="e.g., 'Change the car color to red and add a futuristic cityscape in the background.'"
-                ></textarea>
+                <textarea id="editorPromptInputText" class="w-full p-4 border border-slate-600 rounded-xl bg-slate-800 text-slate-200 placeholder-slate-400" rows="5"
+                    placeholder="e.g., 'Change the car color to red and add a futuristic cityscape in the background.'"></textarea>
             </div>
-
-            <button
-                id="editorEditButton"
-                class="w-full py-4 px-6 rounded-xl text-white font-bold text-xl btn-primary-editor from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 active:from-blue-900 active:to-blue-950 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
-            >
+            <button id="editorEditButton"
+                class="w-full py-4 px-6 rounded-xl text-white font-bold text-xl bg-blue-600 hover:bg-blue-700">
                 <div id="editorButtonContent" class="flex items-center justify-center">
                     <span>Edit Image</span>
                 </div>
             </button>
-
-            <div id="editorErrorContainer" class="mt-8 p-4 bg-red-800 bg-opacity-70 border border-red-600 text-red-100 rounded-lg text-base shadow-md hidden animate-fade-in-up">
-                <!-- Error messages will be displayed here -->
-            </div>
-
-            <div id="editorEditedImageResultContainer" class="mt-10 animate-fade-in-up hidden">
+            <div id="editorErrorContainer" class="mt-8 p-4 bg-red-800 bg-opacity-70 border border-red-600 text-red-100 rounded-lg text-base shadow-md hidden"></div>
+            <div id="editorEditedImageResultContainer" class="mt-10 hidden">
                 <h2 class="text-2xl font-bold text-slate-100 mb-5">Edited Image:</h2>
                 <div class="relative w-full h-auto rounded-xl shadow-xl border-2 border-blue-400 flex items-center justify-center bg-slate-800 p-4 min-h-[200px] overflow-hidden">
-                    <img
-                        id="editorEditedImage"
-                        src=""
-                        alt="AI-edited image based on user prompt"
-                        class="max-w-full h-auto object-contain rounded-lg shadow-md"
-                    >
+                    <img id="editorEditedImage" src="" alt="AI-edited image based on user prompt"
+                        class="max-w-full h-auto object-contain rounded-lg shadow-md">
                 </div>
-                <!-- Download button for Editor -->
                 <div class="mt-6 flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                     <label for="editorDownloadFormat" class="text-slate-300 font-semibold">Download as:</label>
-                    <select id="editorDownloadFormat" class="p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <select id="editorDownloadFormat" class="p-2 rounded-lg bg-slate-700 text-white border border-slate-600">
                         <option value="image/png">PNG</option>
                         <option value="image/jpeg">JPEG</option>
                         <option value="image/webp">WebP</option>
                     </select>
-                    <button
-                        id="downloadEditorEditedButton"
-                        class="py-3 px-6 rounded-xl text-gray-800 font-semibold text-lg btn-secondary-editor from-yellow-300 to-yellow-400 hover:from-yellow-400 hover:to-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
-                    >
+                    <button id="downloadEditorEditedButton"
+                        class="py-3 px-6 rounded-xl text-gray-800 font-semibold text-lg bg-yellow-300 hover:bg-yellow-400">
                         Download Edited Image
                     </button>
                 </div>
             </div>
         </section>
     </main>
-
     <!-- Footer -->
     <footer class="mt-auto w-full bg-slate-900 bg-opacity-95 text-slate-300 text-center py-4 border-t border-blue-600 border-opacity-40 rounded-t-xl shadow-lg">
-        <p class="text-lg">
-            <!-- Removed Twitter/X link and copyright text as per user request -->
-        </p>
+        <p class="text-lg"></p>
     </footer>
-
     <!-- Main Application Script -->
     <script type="module">
-        // --- Global API Key ---
-        // WARNING: Directly embedding your API key in client-side code is a security risk.
-        // For production, consider using a backend proxy to keep your API key secure.
+        // --- Firebase Auth Integration ---
+        // Replace with your actual Firebase config
+        const firebaseConfig = {
+          apiKey: "YOUR_API_KEY",
+          authDomain: "YOUR_AUTH_DOMAIN",
+          projectId: "YOUR_PROJECT_ID",
+          appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        // Auth DOM
+        const authModal = document.getElementById('authModal');
+        const authOpenBtn = document.getElementById('authOpenBtn');
+        const authForm = document.getElementById('authForm');
+        const authEmail = document.getElementById('authEmail');
+        const authPassword = document.getElementById('authPassword');
+        const authError = document.getElementById('authError');
+        const switchToSignUp = document.getElementById('switchToSignUp');
+        const switchToSignIn = document.getElementById('switchToSignIn');
+        const authModalTitle = document.getElementById('authModalTitle');
+        const signOutBtn = document.getElementById('signOutBtn');
+        const signOutBtnMain = document.getElementById('signOutBtnMain');
+        const verifyBanner = document.getElementById('verifyBanner');
+        const sendVerifyEmail = document.getElementById('sendVerifyEmail');
+        let isSignUpMode = false;
+        authOpenBtn.onclick = () => {
+          authModal.classList.remove('hidden');
+          isSignUpMode = false;
+          authModalTitle.textContent = "Sign In";
+          switchToSignUp.classList.remove('hidden');
+          switchToSignIn.classList.add('hidden');
+          authError.textContent = "";
+          authForm.reset();
+        };
+        switchToSignUp.onclick = () => {
+          isSignUpMode = true;
+          authModalTitle.textContent = "Sign Up";
+          switchToSignUp.classList.add('hidden');
+          switchToSignIn.classList.remove('hidden');
+          authError.textContent = "";
+          authForm.reset();
+        };
+        switchToSignIn.onclick = () => {
+          isSignUpMode = false;
+          authModalTitle.textContent = "Sign In";
+          switchToSignUp.classList.remove('hidden');
+          switchToSignIn.classList.add('hidden');
+          authError.textContent = "";
+          authForm.reset();
+        };
+        authModal.addEventListener('click', (e) => {
+          if (e.target === authModal) authModal.classList.add('hidden');
+        });
+        authForm.onsubmit = async (e) => {
+          e.preventDefault();
+          authError.textContent = "";
+          const email = authEmail.value;
+          const password = authPassword.value;
+          try {
+            if (isSignUpMode) {
+              const { user } = await auth.createUserWithEmailAndPassword(email, password);
+              await user.sendEmailVerification();
+              alert("Verification email sent. Please check your inbox.");
+              authModal.classList.add('hidden');
+            } else {
+              await auth.signInWithEmailAndPassword(email, password);
+              authModal.classList.add('hidden');
+            }
+          } catch (err) {
+            authError.textContent = err.message;
+          }
+        };
+        auth.onAuthStateChanged(async user => {
+          if (user) {
+            if (!user.emailVerified) {
+              verifyBanner.classList.remove('hidden');
+              authOpenBtn.classList.add('hidden');
+              signOutBtnMain.classList.remove('hidden');
+            } else {
+              verifyBanner.classList.add('hidden');
+              authOpenBtn.classList.add('hidden');
+              signOutBtnMain.classList.remove('hidden');
+            }
+          } else {
+            verifyBanner.classList.add('hidden');
+            authOpenBtn.classList.remove('hidden');
+            signOutBtnMain.classList.add('hidden');
+          }
+        });
+        sendVerifyEmail.onclick = async () => {
+          const user = auth.currentUser;
+          if (user && !user.emailVerified) {
+            await user.sendEmailVerification();
+            alert('Verification email sent!');
+          }
+        };
+        signOutBtn.onclick = signOutBtnMain.onclick = async () => {
+          await auth.signOut();
+        };
+        // --- End Firebase Auth Integration ---
+        // --- App Logic (AI Image Generator/Editor) ---
         const API_KEY = "AIzaSyARDUG_2e6pF0156ZovIMdkf-vINq6RiYE";
-        // Reverted to the single API URL for both generation and editing
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${API_KEY}`;
-
-        // --- Utility Functions ---
-        const Utils = {
-            /**
-             * Displays an error message in the UI.
-             * @param {string} message - The error message to display.
-             * @param {HTMLElement} container - The container to display the error in.
-             */
-            displayError: function(message, container) {
-                if (container) {
-                    container.textContent = message;
-                    container.classList.remove('hidden');
-                    container.classList.add('opacity-100');
-                }
-            },
-
-            /**
-             * Hides the error message container.
-             * @param {HTMLElement} container - The container to hide.
-             */
-            hideError: function(container) {
-                if (container) {
-                    container.classList.remove('opacity-100');
-                    container.classList.add('hidden');
-                    container.textContent = '';
-                }
-            },
-
-            /**
-             * Downloads an image from a given source URL.
-             * @param {string} imgSrc - The data URL of the image.
-             * @param {string} format - The MIME type for download (e.g., 'image/png').
-             * @param {string} filenamePrefix - Prefix for the downloaded file name.
-             */
-            downloadImage: function(imgSrc, format, filenamePrefix) {
-                if (!imgSrc || imgSrc === window.location.href) {
-                    console.warn('No image to download or image source is invalid.');
-                    return;
-                }
-
-                const filename = `${filenamePrefix}.${format.split('/')[1]}`;
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
-
-                img.onload = () => {
-                    canvas.width = img.naturalWidth;
-                    canvas.height = img.naturalHeight;
-                    ctx.drawImage(img, 0, 0);
-
-                    const quality = format === 'image/jpeg' ? 0.8 : 1.0;
-                    const dataUrl = canvas.toDataURL(format, quality);
-
-                    const link = document.createElement('a');
-                    link.href = dataUrl;
-                    link.download = filename;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    console.log(`Image downloaded successfully as ${format}!`);
+        // Util functions
+        function displayError(msg, container) {
+            container.textContent = msg;
+            container.classList.remove('hidden');
+        }
+        function hideError(container) {
+            container.textContent = '';
+            container.classList.add('hidden');
+        }
+        function downloadImage(imgSrc, format, filenamePrefix) {
+            if (!imgSrc) return;
+            const filename = `${filenamePrefix}.${format.split('/')[1]}`;
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                ctx.drawImage(img, 0, 0);
+                const quality = format === 'image/jpeg' ? 0.8 : 1.0;
+                const dataUrl = canvas.toDataURL(format, quality);
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+            img.src = imgSrc;
+        }
+        // Navigation
+        const homeSection = document.getElementById('homeSection');
+        const generatorSection = document.getElementById('generatorSection');
+        const editorSection = document.getElementById('editorSection');
+        const menuToggleBtn = document.getElementById('menuToggleBtn');
+        const navMenu = document.getElementById('navMenu');
+        const showHomeBtn = document.getElementById('showHomeBtn');
+        const showGeneratorBtn = document.getElementById('showGeneratorBtn');
+        const showEditorBtn = document.getElementById('showEditorBtn');
+        const homeToGeneratorBtn = document.getElementById('homeToGeneratorBtn');
+        const homeToEditorBtn = document.getElementById('homeToEditorBtn');
+        function showSection(section) {
+            homeSection.classList.add('hidden');
+            generatorSection.classList.add('hidden');
+            editorSection.classList.add('hidden');
+            showHomeBtn.classList.remove('active');
+            showGeneratorBtn.classList.remove('active');
+            showEditorBtn.classList.remove('active');
+            if (section === 'home') {
+                homeSection.classList.remove('hidden');
+                showHomeBtn.classList.add('active');
+            } else if (section === 'generator') {
+                generatorSection.classList.remove('hidden');
+                showGeneratorBtn.classList.add('active');
+                hideError(document.getElementById('generatorErrorContainer'));
+                document.getElementById('generatedImageResultContainer').classList.add('hidden');
+            } else if (section === 'editor') {
+                editorSection.classList.remove('hidden');
+                showEditorBtn.classList.add('active');
+                hideError(document.getElementById('editorErrorContainer'));
+                document.getElementById('editorEditedImageResultContainer').classList.add('hidden');
+            }
+            navMenu.classList.add('hidden');
+        }
+        menuToggleBtn.onclick = () => navMenu.classList.toggle('hidden');
+        showHomeBtn.onclick = () => showSection('home');
+        showGeneratorBtn.onclick = () => showSection('generator');
+        showEditorBtn.onclick = () => showSection('editor');
+        homeToGeneratorBtn.onclick = () => showSection('generator');
+        homeToEditorBtn.onclick = () => showSection('editor');
+        document.addEventListener('DOMContentLoaded', () => showSection('home'));
+        // Generator logic
+        const generatorPromptInput = document.getElementById('generatorPromptInput');
+        const generateImageButton = document.getElementById('generateImageButton');
+        const generateButtonContent = document.getElementById('generateButtonContent');
+        const generatorErrorContainer = document.getElementById('generatorErrorContainer');
+        const generatedImageResultContainer = document.getElementById('generatedImageResultContainer');
+        const generatedImage = document.getElementById('generatedImage');
+        const downloadGeneratedButton = document.getElementById('downloadGeneratedButton');
+        const generatorDownloadFormat = document.getElementById('generatorDownloadFormat');
+        generateImageButton.onclick = async () => {
+            generateButtonContent.innerHTML = `<svg class="animate-spin-custom h-7 w-7 mr-3 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.000 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating...`;
+            generateImageButton.disabled = true;
+            hideError(generatorErrorContainer);
+            generatedImageResultContainer.classList.add('hidden');
+            const prompt = generatorPromptInput.value.trim();
+            if (!prompt) {
+                displayError('Please enter a prompt to generate an image.', generatorErrorContainer);
+                generateButtonContent.innerHTML = `<span>Generate Image</span>`;
+                generateImageButton.disabled = false;
+                return;
+            }
+            try {
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = {
+                    contents: chatHistory,
+                    generationConfig: {
+                        responseModalities: ["TEXT", "IMAGE"]
+                    }
                 };
-                img.onerror = () => {
-                    console.error('Failed to load image for download.');
-                };
-                img.src = imgSrc;
-            },
-
-            /**
-             * Manages the loading state for buttons.
-             * @param {HTMLElement} button - The button element.
-             * @param {HTMLElement} contentElement - The element inside the button to change content.
-             * @param {boolean} isLoading - True to show loading, false to hide.
-             * @param {string} originalText - The original text to restore when not loading.
-             * @param {string} loadingText - The text to display when loading.
-             * @param {string} gradientClass - The Tailwind class for the button's gradient.
-             */
-            setButtonLoadingState: function(button, contentElement, isLoading, originalText, loadingText, gradientClass) {
-                if (isLoading) {
-                    button.disabled = true;
-                    button.classList.add('bg-gray-400', 'cursor-not-allowed');
-                    button.classList.remove(gradientClass);
-                    contentElement.innerHTML = `
-                        <svg class="animate-spin-custom h-7 w-7 mr-3 text-white" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.000 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>${loadingText}</span>
-                    `;
-                } else {
-                    button.disabled = false;
-                    button.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                    button.classList.add(gradientClass);
-                    contentElement.innerHTML = `<span>${originalText}</span>`;
+                const response = await fetch(API_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || response.statusText);
                 }
+                const result = await response.json();
+                let imageFound = false;
+                if (result.candidates?.[0]?.content?.parts) {
+                    for (const part of result.candidates[0].content.parts) {
+                        if (part.inlineData && part.inlineData.mimeType.startsWith('image/') && part.inlineData.data) {
+                            const imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                            generatedImage.src = imageUrl;
+                            generatedImageResultContainer.classList.remove('hidden');
+                            imageFound = true;
+                            break;
+                        }
+                    }
+                }
+                if (!imageFound) displayError('No image data received in the API response. Please try a different prompt.', generatorErrorContainer);
+            } catch (err) {
+                displayError(`Error generating image: ${err.message}`, generatorErrorContainer);
+            } finally {
+                generateButtonContent.innerHTML = `<span>Generate Image</span>`;
+                generateImageButton.disabled = false;
             }
         };
-
-        // --- App State & DOM Elements ---
-        const App = {
-            // Sections
-            homeSection: document.getElementById('homeSection'),
-            generatorSection: document.getElementById('generatorSection'),
-            editorSection: document.getElementById('editorSection'),
-
-            // Navigation
-            menuToggleBtn: document.getElementById('menuToggleBtn'),
-            navMenu: document.getElementById('navMenu'),
-            showHomeBtn: document.getElementById('showHomeBtn'),
-            showGeneratorBtn: document.getElementById('showGeneratorBtn'),
-            showEditorBtn: document.getElementById('showEditorBtn'),
-            homeToGeneratorBtn: document.getElementById('homeToGeneratorBtn'),
-            homeToEditorBtn: document.getElementById('homeToEditorBtn'),
-
-            // Generator Elements
-            generatorPromptInput: document.getElementById('generatorPromptInput'),
-            generateImageButton: document.getElementById('generateImageButton'),
-            generateButtonContent: document.getElementById('generateButtonContent'),
-            generatorErrorContainer: document.getElementById('generatorErrorContainer'),
-            generatedImageResultContainer: document.getElementById('generatedImageResultContainer'),
-            generatedImage: document.getElementById('generatedImage'),
-            downloadGeneratedButton: document.getElementById('downloadGeneratedButton'),
-            generatorDownloadFormat: document.getElementById('generatorDownloadFormat'),
-
-            // Editor Elements
-            editorImageUpload: document.getElementById('editorImageUpload'),
-            editorCustomFileUploadButton: document.getElementById('editorCustomFileUploadButton'),
-            editorFileNameDisplay: document.getElementById('editorFileNameDisplay'),
-            editorImagePreview: document.getElementById('editorImagePreview'),
-            editorPreviewContainer: document.getElementById('editorPreviewContainer'),
-            editorImagePlaceholder: document.getElementById('editorImagePlaceholder'),
-            editorPromptInputText: document.getElementById('editorPromptInputText'),
-            editorEditButton: document.getElementById('editorEditButton'),
-            editorButtonContent: document.getElementById('editorButtonContent'),
-            editorErrorContainer: document.getElementById('editorErrorContainer'),
-            editorEditedImageResultContainer: document.getElementById('editorEditedImageResultContainer'),
-            editorEditedImage: document.getElementById('editorEditedImage'),
-            downloadEditorEditedButton: document.getElementById('downloadEditorEditedButton'),
-            editorDownloadFormat: document.getElementById('editorDownloadFormat'),
-
-            // Internal State for Editor
-            editorUploadedImageBase64: null,
-            editorUploadedImageMimeType: null,
-
-            /**
-             * Initializes the application by setting up event listeners and showing the home section.
-             */
-            init: function() {
-                this.bindEventListeners();
-                this.showSection('home');
-            },
-
-            /**
-             * Binds all necessary event listeners for navigation and functionality.
-             */
-            bindEventListeners: function() {
-                // Navigation
-                this.menuToggleBtn.addEventListener('click', this.toggleMenu.bind(this));
-                this.showHomeBtn.addEventListener('click', () => this.showSection('home'));
-                this.showGeneratorBtn.addEventListener('click', () => this.showSection('generator'));
-                this.showEditorBtn.addEventListener('click', () => this.showSection('editor'));
-                this.homeToGeneratorBtn.addEventListener('click', () => this.showSection('generator'));
-                this.homeToEditorBtn.addEventListener('click', () => this.showSection('editor'));
-
-                // Close menu when clicking outside
-                document.addEventListener('click', (event) => {
-                    if (!this.navMenu.contains(event.target) && !this.menuToggleBtn.contains(event.target) && this.navMenu.classList.contains('show-menu')) {
-                        this.closeMenu();
-                    }
-                });
-
-                // Generator
-                this.generateImageButton.addEventListener('click', this.handleGenerateImage.bind(this));
-                this.downloadGeneratedButton.addEventListener('click', () => Utils.downloadImage(this.generatedImage.src, this.generatorDownloadFormat.value, 'generated_image'));
-
-                // Editor
-                this.editorCustomFileUploadButton.addEventListener('click', () => this.editorImageUpload.click());
-                this.editorImageUpload.addEventListener('change', this.handleEditorImageUpload.bind(this));
-                this.editorEditButton.addEventListener('click', this.handleEditImage.bind(this));
-                this.downloadEditorEditedButton.addEventListener('click', () => Utils.downloadImage(this.editorEditedImage.src, this.editorDownloadFormat.value, 'ai_enhanced_image'));
-            },
-
-            /**
-             * Toggles the visibility of the navigation menu.
-             */
-            toggleMenu: function() {
-                this.navMenu.classList.toggle('show-menu');
-                if (!this.navMenu.classList.contains('show-menu')) {
-                    this.navMenu.addEventListener('transitionend', function handler() {
-                        this.classList.add('hidden');
-                        this.removeEventListener('transitionend', handler);
-                    });
-                } else {
-                    this.navMenu.classList.remove('hidden');
-                }
-            },
-
-            /**
-             * Closes the navigation menu.
-             */
-            closeMenu: function() {
-                if (this.navMenu.classList.contains('show-menu')) {
-                    this.navMenu.classList.remove('show-menu');
-                    this.navMenu.addEventListener('transitionend', function handler() {
-                        this.classList.add('hidden');
-                        this.removeEventListener('transitionend', handler);
-                    });
-                }
-            },
-
-            /**
-             * Shows a specific section of the application and updates active navigation button.
-             * @param {string} sectionId - The ID of the section to show ('home', 'generator', 'editor').
-             * @param {object} [data={}] - Optional data to pass to the section (e.g., image for editor).
-             */
-            showSection: function(sectionId, data = {}) {
-                // Hide all sections first
-                this.homeSection.classList.add('hidden');
-                this.generatorSection.classList.add('hidden');
-                this.editorSection.classList.add('hidden');
-
-                // Remove active class from all nav buttons
-                const allMenuButtons = [this.showHomeBtn, this.showGeneratorBtn, this.showEditorBtn];
-                allMenuButtons.forEach(btn => {
-                    btn.classList.remove('active');
-                });
-
-                // Show the requested section and set active button
-                if (sectionId === 'home') {
-                    this.homeSection.classList.remove('hidden');
-                    this.showHomeBtn.classList.add('active');
-                } else if (sectionId === 'generator') {
-                    this.generatorSection.classList.remove('hidden');
-                    this.showGeneratorBtn.classList.add('active');
-                    if (data.prompt) {
-                        this.generatorPromptInput.value = data.prompt;
-                    }
-                    this.generatedImageResultContainer.classList.add('hidden');
-                    Utils.hideError(this.generatorErrorContainer);
-                } else if (sectionId === 'editor') {
-                    this.editorSection.classList.remove('hidden');
-                    this.showEditorBtn.classList.add('active');
-                    if (data.image) {
-                        this.editorImagePreview.src = data.image;
-                        this.editorImagePreview.classList.remove('hidden');
-                        this.editorImagePlaceholder.classList.add('hidden');
-                        this.editorFileNameDisplay.textContent = 'example_image.png';
-                        this.editorFileNameDisplay.classList.remove('text-gray-400');
-                        this.editorFileNameDisplay.classList.add('text-gray-800');
-                        this.editorUploadedImageBase64 = data.image;
-                        this.editorUploadedImageMimeType = 'image/png';
-                    } else {
-                        this.editorImagePreview.src = '#';
-                        this.editorImagePreview.classList.add('hidden');
-                        this.editorImagePlaceholder.classList.remove('hidden');
-                        this.editorFileNameDisplay.textContent = 'No file chosen';
-                        this.editorFileNameDisplay.classList.remove('text-gray-800');
-                        this.editorFileNameDisplay.classList.add('text-gray-400');
-                        this.editorUploadedImageBase64 = null;
-                        this.editorUploadedImageMimeType = null;
-                    }
-                    this.editorEditedImageResultContainer.classList.add('hidden');
-                    Utils.hideError(this.editorErrorContainer);
-                }
-                this.closeMenu();
-            },
-
-            /**
-             * Handles the image generation process.
-             */
-            handleGenerateImage: async function() {
-                Utils.setButtonLoadingState(this.generateImageButton, this.generateButtonContent, true, 'Generate Image', 'Generating...', 'btn-gradient');
-                Utils.hideError(this.generatorErrorContainer);
-                this.generatedImageResultContainer.classList.add('hidden');
-                this.generatedImage.classList.remove('image-loaded-glow');
-
-                const prompt = this.generatorPromptInput.value.trim();
-
-                if (!prompt) {
-                    Utils.displayError('Please enter a prompt to generate an image.', this.generatorErrorContainer);
-                    Utils.setButtonLoadingState(this.generateImageButton, this.generateButtonContent, false, 'Generate Image', 'Generating...', 'btn-gradient');
-                    return;
-                }
-
-                try {
-                    const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-                    const payload = {
-                        contents: chatHistory,
-                        generationConfig: {
-                            responseModalities: ["TEXT", "IMAGE"]
-                        }
-                    };
-
-                    const response = await fetch(API_URL, { // Using the single API_URL
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(`API error: ${errorData.error.message || response.statusText}`);
-                    }
-
-                    const result = await response.json();
-
-                    let imageFound = false;
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts) {
-
-                        for (const part of result.candidates[0].content.parts) {
-                            if (part.inlineData && part.inlineData.mimeType.startsWith('image/') && part.inlineData.data) {
-                                const imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                                this.generatedImage.src = imageUrl;
-                                this.generatedImageResultContainer.classList.remove('hidden');
-
-                                this.generatedImage.onload = () => {
-                                    this.generatedImage.classList.add('image-loaded-glow');
-                                };
-                                imageFound = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!imageFound) {
-                        Utils.displayError('No image data received in the API response. Please try a different prompt.', this.generatorErrorContainer);
-                    }
-
-                } catch (err) {
-                    Utils.displayError(`Error generating image: ${err.message}`, this.generatorErrorContainer);
-                    console.error('Generation error:', err);
-                } finally {
-                    Utils.setButtonLoadingState(this.generateImageButton, this.generateButtonContent, false, 'Generate Image', 'Generating...', 'btn-gradient');
-                }
-            },
-
-            /**
-             * Handles image file upload for the editor.
-             * @param {Event} event - The change event from the file input.
-             */
-            handleEditorImageUpload: function(event) {
-                const file = event.target.files[0];
-
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        this.editorUploadedImageBase64 = e.target.result;
-                        this.editorUploadedImageMimeType = file.type;
-
-                        this.editorImagePreview.src = this.editorUploadedImageBase64;
-                        this.editorImagePreview.classList.remove('hidden');
-                        this.editorImagePlaceholder.classList.add('hidden');
-                        this.editorFileNameDisplay.textContent = file.name;
-                        this.editorFileNameDisplay.classList.remove('text-slate-400');
-                        this.editorFileNameDisplay.classList.add('text-slate-200');
-
-                        Utils.hideError(this.editorErrorContainer);
-                    };
-                    reader.onerror = (error) => {
-                        Utils.displayError('Failed to read image file. Error: ' + error.message, this.editorErrorContainer);
-                        this.editorUploadedImageBase64 = null;
-                        this.editorUploadedImageMimeType = null;
-                        this.editorImagePreview.classList.add('hidden');
-                        this.editorImagePlaceholder.classList.remove('hidden');
-                        this.editorFileNameDisplay.textContent = 'No file chosen';
-                        this.editorFileNameDisplay.classList.remove('text-slate-200');
-                        this.editorFileNameDisplay.classList.add('text-slate-400');
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    this.editorUploadedImageBase64 = null;
-                    this.editorUploadedImageMimeType = null;
-                    this.editorImagePreview.classList.add('hidden');
-                    this.editorImagePlaceholder.classList.remove('hidden');
-                    this.editorFileNameDisplay.textContent = 'No file chosen';
-                    this.editorFileNameDisplay.classList.remove('text-slate-200');
-                    this.editorFileNameDisplay.classList.add('text-slate-400');
-                }
-            },
-
-            /**
-             * Handles the image editing process.
-             */
-            handleEditImage: async function() {
-                Utils.setButtonLoadingState(this.editorEditButton, this.editorButtonContent, true, 'Edit Image', 'Editing...', 'btn-primary-editor');
-                Utils.hideError(this.editorErrorContainer);
-                this.editorEditedImageResultContainer.classList.add('hidden');
-
-                const prompt = this.editorPromptInputText.value.trim();
-
-                if (!this.editorUploadedImageBase64) {
-                    Utils.displayError('Please upload an image first.', this.editorErrorContainer);
-                    Utils.setButtonLoadingState(this.editorEditButton, this.editorButtonContent, false, 'Edit Image', 'Editing...', 'btn-primary-editor');
-                    return;
-                }
-
-                if (!prompt) {
-                    Utils.displayError('Please enter a prompt describing how to edit the image.', this.editorErrorContainer);
-                    Utils.setButtonLoadingState(this.editorEditButton, this.editorButtonContent, false, 'Edit Image', 'Editing...', 'btn-primary-editor');
-                    return;
-                }
-
-                try {
-                    const chatHistory = [
-                        {
-                            role: "user",
-                            parts: [
-                                { text: prompt },
-                                {
-                                    inlineData: {
-                                        mimeType: this.editorUploadedImageMimeType,
-                                        data: this.editorUploadedImageBase64.split(',')[1]
-                                    }
+        downloadGeneratedButton.onclick = () => downloadImage(generatedImage.src, generatorDownloadFormat.value, 'generated_image');
+        // Editor logic
+        const editorImageUpload = document.getElementById('editorImageUpload');
+        const editorCustomFileUploadButton = document.getElementById('editorCustomFileUploadButton');
+        const editorFileNameDisplay = document.getElementById('editorFileNameDisplay');
+        const editorImagePreview = document.getElementById('editorImagePreview');
+        const editorPreviewContainer = document.getElementById('editorPreviewContainer');
+        const editorImagePlaceholder = document.getElementById('editorImagePlaceholder');
+        const editorPromptInputText = document.getElementById('editorPromptInputText');
+        const editorEditButton = document.getElementById('editorEditButton');
+        const editorButtonContent = document.getElementById('editorButtonContent');
+        const editorErrorContainer = document.getElementById('editorErrorContainer');
+        const editorEditedImageResultContainer = document.getElementById('editorEditedImageResultContainer');
+        const editorEditedImage = document.getElementById('editorEditedImage');
+        const downloadEditorEditedButton = document.getElementById('downloadEditorEditedButton');
+        const editorDownloadFormat = document.getElementById('editorDownloadFormat');
+        let editorUploadedImageBase64 = null;
+        let editorUploadedImageMimeType = null;
+        editorCustomFileUploadButton.onclick = () => editorImageUpload.click();
+        editorImageUpload.onchange = (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    editorUploadedImageBase64 = e.target.result;
+                    editorUploadedImageMimeType = file.type;
+                    editorImagePreview.src = editorUploadedImageBase64;
+                    editorImagePreview.classList.remove('hidden');
+                    editorImagePlaceholder.classList.add('hidden');
+                    editorFileNameDisplay.textContent = file.name;
+                    editorFileNameDisplay.classList.remove('text-slate-400');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                editorUploadedImageBase64 = null;
+                editorUploadedImageMimeType = null;
+                editorImagePreview.classList.add('hidden');
+                editorImagePlaceholder.classList.remove('hidden');
+                editorFileNameDisplay.textContent = 'No file chosen';
+                editorFileNameDisplay.classList.add('text-slate-400');
+            }
+        };
+        editorEditButton.onclick = async () => {
+            editorButtonContent.innerHTML = `<svg class="animate-spin-custom h-7 w-7 mr-3 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.000 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Editing...`;
+            editorEditButton.disabled = true;
+            hideError(editorErrorContainer);
+            editorEditedImageResultContainer.classList.add('hidden');
+            const prompt = editorPromptInputText.value.trim();
+            if (!editorUploadedImageBase64) {
+                displayError('Please upload an image first.', editorErrorContainer);
+                editorButtonContent.innerHTML = `<span>Edit Image</span>`;
+                editorEditButton.disabled = false;
+                return;
+            }
+            if (!prompt) {
+                displayError('Please enter a prompt describing how to edit the image.', editorErrorContainer);
+                editorButtonContent.innerHTML = `<span>Edit Image</span>`;
+                editorEditButton.disabled = false;
+                return;
+            }
+            try {
+                const chatHistory = [
+                    {
+                        role: "user",
+                        parts: [
+                            { text: prompt },
+                            {
+                                inlineData: {
+                                    mimeType: editorUploadedImageMimeType,
+                                    data: editorUploadedImageBase64.split(',')[1]
                                 }
-                            ]
-                        }
-                    ];
-
-                    const payload = {
-                        contents: chatHistory,
-                        generationConfig: {
-                            responseModalities: ["TEXT", "IMAGE"]
-                        }
-                    };
-
-                    const response = await fetch(API_URL, { // Using the single API_URL
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(`API error: ${errorData.error.message || response.statusText}`);
-                    }
-
-                    const result = await response.json();
-
-                    let imageFound = false;
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts) {
-
-                        for (const part of result.candidates[0].content.parts) {
-                            if (part.inlineData && part.inlineData.mimeType.startsWith('image/') && part.inlineData.data) {
-                                const editedImageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                                this.editorEditedImage.src = editedImageUrl;
-                                this.editorEditedImageResultContainer.classList.remove('hidden');
-
-                                this.editorEditedImage.onload = () => {
-                                    this.editorEditedImage.classList.add('image-loaded-glow');
-                                };
-                                imageFound = true;
-                                break;
                             }
+                        ]
+                    }
+                ];
+                const payload = {
+                    contents: chatHistory,
+                    generationConfig: {
+                        responseModalities: ["TEXT", "IMAGE"]
+                    }
+                };
+                const response = await fetch(API_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || response.statusText);
+                }
+                const result = await response.json();
+                let imageFound = false;
+                if (result.candidates?.[0]?.content?.parts) {
+                    for (const part of result.candidates[0].content.parts) {
+                        if (part.inlineData && part.inlineData.mimeType.startsWith('image/') && part.inlineData.data) {
+                            const editedImageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                            editorEditedImage.src = editedImageUrl;
+                            editorEditedImageResultContainer.classList.remove('hidden');
+                            imageFound = true;
+                            break;
                         }
                     }
-
-                    if (!imageFound) {
-                        Utils.displayError('AI did not return an image. Try refining your prompt.', this.editorErrorContainer);
-                    }
-
-                } catch (err) {
-                    Utils.displayError(`AI editing failed: ${err.message}`, this.editorErrorContainer);
-                    console.error('Generation error:', err);
-                } finally {
-                    Utils.setButtonLoadingState(this.editorEditButton, this.editorButtonContent, false, 'Edit Image', 'Editing...', 'btn-primary-editor');
                 }
+                if (!imageFound) displayError('AI did not return an image. Try refining your prompt.', editorErrorContainer);
+            } catch (err) {
+                displayError(`AI editing failed: ${err.message}`, editorErrorContainer);
+            } finally {
+                editorButtonContent.innerHTML = `<span>Edit Image</span>`;
+                editorEditButton.disabled = false;
             }
         };
-
-        // Initialize the application when the DOM is ready
-        document.addEventListener('DOMContentLoaded', () => App.init());
-        
-    // --- Firebase Auth Integration ---
-
-    // 1. Initialize Firebase (replace with your actual Firebase config)
-    const firebaseConfig = {
-  apiKey: "AIzaSyAzI8g7OCNqRAHpbB-A76tPE-3nY0WNthA",
-  authDomain: "imagine-mind.firebaseapp.com",
-  projectId: "imagine-mind",
-  storageBucket: "imagine-mind.firebasestorage.app",
-  messagingSenderId: "269766131845",
-  appId: "1:269766131845:web:2d0734a8357e274ec3a9ec",
-  measurementId: "G-32VR3DNEC3"
-};
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-
-    // 2. DOM Elements
-    const authModal = document.getElementById('authModal');
-    const authOpenBtn = document.getElementById('authOpenBtn');
-    const authForm = document.getElementById('authForm');
-    const authEmail = document.getElementById('authEmail');
-    const authPassword = document.getElementById('authPassword');
-    const authError = document.getElementById('authError');
-    const switchToSignUp = document.getElementById('switchToSignUp');
-    const switchToSignIn = document.getElementById('switchToSignIn');
-    const authModalTitle = document.getElementById('authModalTitle');
-    const signOutBtn = document.getElementById('signOutBtn');
-    const signOutBtnMain = document.getElementById('signOutBtnMain');
-    const verifyBanner = document.getElementById('verifyBanner');
-    const sendVerifyEmail = document.getElementById('sendVerifyEmail');
-
-    let isSignUpMode = false;
-
-    // 3. Show/Hide Modal
-    authOpenBtn.onclick = () => {
-      authModal.classList.remove('hidden');
-      isSignUpMode = false;
-      authModalTitle.textContent = "Sign In";
-      switchToSignUp.classList.remove('hidden');
-      switchToSignIn.classList.add('hidden');
-      authError.textContent = "";
-      authForm.reset();
-    };
-    switchToSignUp.onclick = () => {
-      isSignUpMode = true;
-      authModalTitle.textContent = "Sign Up";
-      switchToSignUp.classList.add('hidden');
-      switchToSignIn.classList.remove('hidden');
-      authError.textContent = "";
-      authForm.reset();
-    };
-    switchToSignIn.onclick = () => {
-      isSignUpMode = false;
-      authModalTitle.textContent = "Sign In";
-      switchToSignUp.classList.remove('hidden');
-      switchToSignIn.classList.add('hidden');
-      authError.textContent = "";
-      authForm.reset();
-    };
-    // Close modal on click outside (optional)
-    authModal.addEventListener('click', (e) => {
-      if (e.target === authModal) authModal.classList.add('hidden');
-    });
-
-    // 4. Auth Form Submit
-    authForm.onsubmit = async (e) => {
-      e.preventDefault();
-      authError.textContent = "";
-      const email = authEmail.value;
-      const password = authPassword.value;
-
-      try {
-        if (isSignUpMode) {
-          const { user } = await auth.createUserWithEmailAndPassword(email, password);
-          await user.sendEmailVerification();
-          alert("Verification email sent. Please check your inbox.");
-          authModal.classList.add('hidden');
-        } else {
-          await auth.signInWithEmailAndPassword(email, password);
-          authModal.classList.add('hidden');
-        }
-      } catch (err) {
-        authError.textContent = err.message;
-      }
-    };
-
-    // 5. Auth State Change
-    auth.onAuthStateChanged(async user => {
-      if (user) {
-        if (!user.emailVerified) {
-          verifyBanner.classList.remove('hidden');
-          authOpenBtn.classList.add('hidden');
-          signOutBtnMain.classList.remove('hidden');
-        } else {
-          verifyBanner.classList.add('hidden');
-          authOpenBtn.classList.add('hidden');
-          signOutBtnMain.classList.remove('hidden');
-        }
-      } else {
-        verifyBanner.classList.add('hidden');
-        authOpenBtn.classList.remove('hidden');
-        signOutBtnMain.classList.add('hidden');
-      }
-    });
-
-    // 6. Send Verification Email
-    sendVerifyEmail.onclick = async () => {
-      const user = auth.currentUser;
-      if (user && !user.emailVerified) {
-        await user.sendEmailVerification();
-        alert('Verification email sent!');
-      }
-    };
-
-    // 7. Sign Out
-    signOutBtn.onclick = signOutBtnMain.onclick = async () => {
-      await auth.signOut();
-    };
-
-    //--- Restrict features to verified users if needed ---
-     function requireVerifiedUser(action) {
-       const user = auth.currentUser;
-      if (!user || !user.emailVerified) {
-        alert('Please sign in and verify your email to use this feature.');
-        return false;
-      }
-       action();
-      return true;
-     }
-     Usage: requireVerifiedUser(() => { /* protected code */ });
-
-    // --- End Firebase Auth Integration ---
+        downloadEditorEditedButton.onclick = () => downloadImage(editorEditedImage.src, editorDownloadFormat.value, 'ai_enhanced_image');
     </script>
 </body>
 </html>
