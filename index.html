@@ -15,6 +15,177 @@
 
       gtag('config', 'G-32VR3DNEC3'); // Updated Measurement ID
     </script>
+    <!-- Add these inside your <head> before your main script -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+<body>
+  <!-- ...your existing content... -->
+
+  <!-- Firebase Auth Modals -->
+  <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
+    <div class="bg-white rounded-2xl shadow-xl w-[95vw] max-w-md p-8 text-gray-800">
+      <h2 class="text-2xl font-bold mb-4" id="authModalTitle">Sign In</h2>
+      <form id="authForm" class="space-y-4">
+        <input id="authEmail" type="email" placeholder="Email" required class="w-full py-2 px-3 border rounded" />
+        <input id="authPassword" type="password" placeholder="Password" required class="w-full py-2 px-3 border rounded" />
+        <div id="authError" class="text-red-600 font-semibold text-sm"></div>
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded font-bold">Continue</button>
+      </form>
+      <div class="flex justify-between mt-4 text-sm">
+        <button id="switchToSignUp" class="text-blue-600 hover:underline">Don't have an account? Sign up</button>
+        <button id="switchToSignIn" class="text-blue-600 hover:underline hidden">Already have an account? Sign in</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Verification Banner -->
+  <div id="verifyBanner" class="hidden fixed top-0 left-0 w-full bg-yellow-400 text-gray-900 text-center py-3 z-40">
+    Please verify your email address.
+    <button id="sendVerifyEmail" class="ml-3 bg-blue-700 hover:bg-blue-800 text-white px-2 py-1 rounded">Resend Verification Email</button>
+    <button id="signOutBtn" class="ml-3 bg-gray-700 hover:bg-gray-800 text-white px-2 py-1 rounded">Sign Out</button>
+  </div>
+
+  <!-- Auth Button -->
+  <button id="authOpenBtn" class="fixed top-5 right-8 z-40 bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow-lg">Sign In</button>
+  <button id="signOutBtnMain" class="fixed top-5 right-8 z-40 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded font-bold shadow-lg hidden">Sign Out</button>
+
+  <!-- ...your existing main content and footer... -->
+
+  <script type="module">
+    // --- Your existing script code above ---
+
+    // --- Firebase Auth Integration ---
+
+    // 1. Initialize Firebase (replace with your actual Firebase config)
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      appId: "YOUR_APP_ID"
+      // ... any other config values
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // 2. DOM Elements
+    const authModal = document.getElementById('authModal');
+    const authOpenBtn = document.getElementById('authOpenBtn');
+    const authForm = document.getElementById('authForm');
+    const authEmail = document.getElementById('authEmail');
+    const authPassword = document.getElementById('authPassword');
+    const authError = document.getElementById('authError');
+    const switchToSignUp = document.getElementById('switchToSignUp');
+    const switchToSignIn = document.getElementById('switchToSignIn');
+    const authModalTitle = document.getElementById('authModalTitle');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const signOutBtnMain = document.getElementById('signOutBtnMain');
+    const verifyBanner = document.getElementById('verifyBanner');
+    const sendVerifyEmail = document.getElementById('sendVerifyEmail');
+
+    let isSignUpMode = false;
+
+    // 3. Show/Hide Modal
+    authOpenBtn.onclick = () => {
+      authModal.classList.remove('hidden');
+      isSignUpMode = false;
+      authModalTitle.textContent = "Sign In";
+      switchToSignUp.classList.remove('hidden');
+      switchToSignIn.classList.add('hidden');
+      authError.textContent = "";
+      authForm.reset();
+    };
+    switchToSignUp.onclick = () => {
+      isSignUpMode = true;
+      authModalTitle.textContent = "Sign Up";
+      switchToSignUp.classList.add('hidden');
+      switchToSignIn.classList.remove('hidden');
+      authError.textContent = "";
+      authForm.reset();
+    };
+    switchToSignIn.onclick = () => {
+      isSignUpMode = false;
+      authModalTitle.textContent = "Sign In";
+      switchToSignUp.classList.remove('hidden');
+      switchToSignIn.classList.add('hidden');
+      authError.textContent = "";
+      authForm.reset();
+    };
+    // Close modal on click outside (optional)
+    authModal.addEventListener('click', (e) => {
+      if (e.target === authModal) authModal.classList.add('hidden');
+    });
+
+    // 4. Auth Form Submit
+    authForm.onsubmit = async (e) => {
+      e.preventDefault();
+      authError.textContent = "";
+      const email = authEmail.value;
+      const password = authPassword.value;
+
+      try {
+        if (isSignUpMode) {
+          const { user } = await auth.createUserWithEmailAndPassword(email, password);
+          await user.sendEmailVerification();
+          alert("Verification email sent. Please check your inbox.");
+          authModal.classList.add('hidden');
+        } else {
+          await auth.signInWithEmailAndPassword(email, password);
+          authModal.classList.add('hidden');
+        }
+      } catch (err) {
+        authError.textContent = err.message;
+      }
+    };
+
+    // 5. Auth State Change
+    auth.onAuthStateChanged(async user => {
+      if (user) {
+        if (!user.emailVerified) {
+          verifyBanner.classList.remove('hidden');
+          authOpenBtn.classList.add('hidden');
+          signOutBtnMain.classList.remove('hidden');
+        } else {
+          verifyBanner.classList.add('hidden');
+          authOpenBtn.classList.add('hidden');
+          signOutBtnMain.classList.remove('hidden');
+        }
+      } else {
+        verifyBanner.classList.add('hidden');
+        authOpenBtn.classList.remove('hidden');
+        signOutBtnMain.classList.add('hidden');
+      }
+    });
+
+    // 6. Send Verification Email
+    sendVerifyEmail.onclick = async () => {
+      const user = auth.currentUser;
+      if (user && !user.emailVerified) {
+        await user.sendEmailVerification();
+        alert('Verification email sent!');
+      }
+    };
+
+    // 7. Sign Out
+    signOutBtn.onclick = signOutBtnMain.onclick = async () => {
+      await auth.signOut();
+    };
+
+    // --- Restrict features to verified users if needed ---
+    // function requireVerifiedUser(action) {
+    //   const user = auth.currentUser;
+    //   if (!user || !user.emailVerified) {
+    //     alert('Please sign in and verify your email to use this feature.');
+    //     return false;
+    //   }
+    //   action();
+    //   return true;
+    // }
+    // Usage: requireVerifiedUser(() => { /* protected code */ });
+
+    // --- End Firebase Auth Integration ---
+  </script>
+</body>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -285,6 +456,37 @@
         <button id="showGeneratorBtn">Image Generator</button>
         <button id="showEditorBtn">Image Editor</button>
     </div>
+    <body>
+  <!-- ...your existing content... -->
+
+  <!-- Firebase Auth Modals -->
+  <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
+    <div class="bg-white rounded-2xl shadow-xl w-[95vw] max-w-md p-8 text-gray-800">
+      <h2 class="text-2xl font-bold mb-4" id="authModalTitle">Sign In</h2>
+      <form id="authForm" class="space-y-4">
+        <input id="authEmail" type="email" placeholder="Email" required class="w-full py-2 px-3 border rounded" />
+        <input id="authPassword" type="password" placeholder="Password" required class="w-full py-2 px-3 border rounded" />
+        <div id="authError" class="text-red-600 font-semibold text-sm"></div>
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded font-bold">Continue</button>
+      </form>
+      <div class="flex justify-between mt-4 text-sm">
+        <button id="switchToSignUp" class="text-blue-600 hover:underline">Don't have an account? Sign up</button>
+        <button id="switchToSignIn" class="text-blue-600 hover:underline hidden">Already have an account? Sign in</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Verification Banner -->
+  <div id="verifyBanner" class="hidden fixed top-0 left-0 w-full bg-yellow-400 text-gray-900 text-center py-3 z-40">
+    Please verify your email address.
+    <button id="sendVerifyEmail" class="ml-3 bg-blue-700 hover:bg-blue-800 text-white px-2 py-1 rounded">Resend Verification Email</button>
+    <button id="signOutBtn" class="ml-3 bg-gray-700 hover:bg-gray-800 text-white px-2 py-1 rounded">Sign Out</button>
+  </div>
+
+  <!-- Auth Button -->
+  <button id="authOpenBtn" class="fixed top-5 right-8 z-40 bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow-lg">Sign In</button>
+  <button id="signOutBtnMain" class="fixed top-5 right-8 z-40 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded font-bold shadow-lg hidden">Sign Out</button>
+
 
     <!-- Main Content Sections -->
     <main class="w-full max-w-6xl flex flex-col items-center p-4">
@@ -965,6 +1167,136 @@
 
         // Initialize the application when the DOM is ready
         document.addEventListener('DOMContentLoaded', () => App.init());
+        
+    // --- Firebase Auth Integration ---
+
+    // 1. Initialize Firebase (replace with your actual Firebase config)
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      appId: "YOUR_APP_ID"
+      // ... any other config values
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // 2. DOM Elements
+    const authModal = document.getElementById('authModal');
+    const authOpenBtn = document.getElementById('authOpenBtn');
+    const authForm = document.getElementById('authForm');
+    const authEmail = document.getElementById('authEmail');
+    const authPassword = document.getElementById('authPassword');
+    const authError = document.getElementById('authError');
+    const switchToSignUp = document.getElementById('switchToSignUp');
+    const switchToSignIn = document.getElementById('switchToSignIn');
+    const authModalTitle = document.getElementById('authModalTitle');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const signOutBtnMain = document.getElementById('signOutBtnMain');
+    const verifyBanner = document.getElementById('verifyBanner');
+    const sendVerifyEmail = document.getElementById('sendVerifyEmail');
+
+    let isSignUpMode = false;
+
+    // 3. Show/Hide Modal
+    authOpenBtn.onclick = () => {
+      authModal.classList.remove('hidden');
+      isSignUpMode = false;
+      authModalTitle.textContent = "Sign In";
+      switchToSignUp.classList.remove('hidden');
+      switchToSignIn.classList.add('hidden');
+      authError.textContent = "";
+      authForm.reset();
+    };
+    switchToSignUp.onclick = () => {
+      isSignUpMode = true;
+      authModalTitle.textContent = "Sign Up";
+      switchToSignUp.classList.add('hidden');
+      switchToSignIn.classList.remove('hidden');
+      authError.textContent = "";
+      authForm.reset();
+    };
+    switchToSignIn.onclick = () => {
+      isSignUpMode = false;
+      authModalTitle.textContent = "Sign In";
+      switchToSignUp.classList.remove('hidden');
+      switchToSignIn.classList.add('hidden');
+      authError.textContent = "";
+      authForm.reset();
+    };
+    // Close modal on click outside (optional)
+    authModal.addEventListener('click', (e) => {
+      if (e.target === authModal) authModal.classList.add('hidden');
+    });
+
+    // 4. Auth Form Submit
+    authForm.onsubmit = async (e) => {
+      e.preventDefault();
+      authError.textContent = "";
+      const email = authEmail.value;
+      const password = authPassword.value;
+
+      try {
+        if (isSignUpMode) {
+          const { user } = await auth.createUserWithEmailAndPassword(email, password);
+          await user.sendEmailVerification();
+          alert("Verification email sent. Please check your inbox.");
+          authModal.classList.add('hidden');
+        } else {
+          await auth.signInWithEmailAndPassword(email, password);
+          authModal.classList.add('hidden');
+        }
+      } catch (err) {
+        authError.textContent = err.message;
+      }
+    };
+
+    // 5. Auth State Change
+    auth.onAuthStateChanged(async user => {
+      if (user) {
+        if (!user.emailVerified) {
+          verifyBanner.classList.remove('hidden');
+          authOpenBtn.classList.add('hidden');
+          signOutBtnMain.classList.remove('hidden');
+        } else {
+          verifyBanner.classList.add('hidden');
+          authOpenBtn.classList.add('hidden');
+          signOutBtnMain.classList.remove('hidden');
+        }
+      } else {
+        verifyBanner.classList.add('hidden');
+        authOpenBtn.classList.remove('hidden');
+        signOutBtnMain.classList.add('hidden');
+      }
+    });
+
+    // 6. Send Verification Email
+    sendVerifyEmail.onclick = async () => {
+      const user = auth.currentUser;
+      if (user && !user.emailVerified) {
+        await user.sendEmailVerification();
+        alert('Verification email sent!');
+      }
+    };
+
+    // 7. Sign Out
+    signOutBtn.onclick = signOutBtnMain.onclick = async () => {
+      await auth.signOut();
+    };
+
+    //--- Restrict features to verified users if needed ---
+     function requireVerifiedUser(action) {
+       const user = auth.currentUser;
+      if (!user || !user.emailVerified) {
+        alert('Please sign in and verify your email to use this feature.');
+        return false;
+      }
+       action();
+      return true;
+     }
+     Usage: requireVerifiedUser(() => { /* protected code */ });
+
+    // --- End Firebase Auth Integration ---
     </script>
 </body>
 </html>
